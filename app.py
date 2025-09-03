@@ -1,21 +1,51 @@
+import os
+import json
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import gspread
+from google.oauth2.service_account import Credentials
 
-df_path = r'restaurants.csv'
+# ---------------------------
+# Google Sheets Setup
+# ---------------------------
+
+SHEET_NAME = "restaurant_ratings"  # Your sheet name
+
+# Determine where to get credentials
+if "GCP_SERVICE_ACCOUNT" in os.environ:
+    # Local dev via environment variable
+    service_account_info = json.loads(os.environ["GCP_SERVICE_ACCOUNT"])
+else:
+    # Streamlit Cloud via secrets
+    service_account_info = st.secrets["gcp_service_account"]
+
+# Authenticate
+scope = ["https://spreadsheets.google.com/feeds",
+         "https://www.googleapis.com/auth/drive"]
+creds = Credentials.from_service_account_info(service_account_info, scopes=scope)
+client = gspread.authorize(creds)
+sheet = client.open(SHEET_NAME).sheet1  # first tab
 
 # Load data
-try:
-    df = pd.read_csv(df_path)
-    if "comments" not in df.columns:
-        df["comments"] = ""
-except FileNotFoundError:
-    df = pd.DataFrame(columns=["restaurant", "rating", "location", "cuisine", "comments"])
+data = sheet.get_all_records()
+df = pd.DataFrame(data)
 
-# --- Sidebar for navigation ---
+# Ensure required columns exist
+required_cols = ["restaurant", "rating", "location", "cuisine", "comments"]
+for col in required_cols:
+    if col not in df.columns:
+        df[col] = ""
+df = df[required_cols]
+
+# ---------------------------
+# Sidebar Navigation
+# ---------------------------
 page = st.sidebar.radio("Choose a page", ["Add Ratings", "Edit Ratings", "View & Visualize"])
 
-# --- PAGE 1: Add Ratings ---
+# ---------------------------
+# PAGE 1: Add Ratings
+# ---------------------------
 if page == "Add Ratings":
     st.title("🍴 Add a New Restaurant Rating")
     with st.form("add_rating"):
@@ -26,14 +56,13 @@ if page == "Add Ratings":
         comments = st.text_area("Comments (optional)")
         submitted = st.form_submit_button("Add Rating")
         if submitted and restaurant:
-            new_row = {"restaurant": restaurant, "rating": rating, 
-                       "location": location, "cuisine": cuisine,
-                       "comments": comments}
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            df.to_csv(df_path, index=False)
+            new_row = [restaurant, rating, location, cuisine, comments]
+            sheet.append_row(new_row)
             st.success(f"✅ Added {restaurant} with rating {rating}")
 
-# --- PAGE 2: Edit Ratings ---
+# ---------------------------
+# PAGE 2: Edit Ratings
+# ---------------------------
 elif page == "Edit Ratings":
     st.title("✏️ Edit Restaurant Ratings")
     if df.empty:
@@ -58,12 +87,14 @@ elif page == "Edit Ratings":
                 submitted = st.form_submit_button("Save Changes")
 
                 if submitted:
-                    df.loc[df["restaurant"] == selected_restaurant, ["restaurant", "rating", "location", "cuisine", "comments"]] = \
-                        [new_name, new_rating, new_location, new_cuisine, new_comments]
-                    df.to_csv(df_path, index=False)
+                    # Find row index in Google Sheet (1-based, including header row)
+                    row_index = df.index[df["restaurant"] == selected_restaurant][0] + 2
+                    sheet.update(f"A{row_index}:E{row_index}", [[new_name, new_rating, new_location, new_cuisine, new_comments]])
                     st.success(f"✅ Updated {new_name} successfully!")
 
-# --- PAGE 3: View & Visualize ---
+# ---------------------------
+# PAGE 3: View & Visualize
+# ---------------------------
 elif page == "View & Visualize":
     st.title("📋 View Ratings & Visualizations")
 
@@ -80,7 +111,7 @@ elif page == "View & Visualize":
         if cuisine_filter:
             filtered_df = filtered_df[filtered_df["cuisine"].isin(cuisine_filter)]
 
-        # Table view (include comments)
+        # Table view
         st.subheader("Ratings Table")
         st.dataframe(filtered_df)
 
