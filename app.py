@@ -61,15 +61,16 @@ if page == "Add Ratings":
             st.success(f"✅ Added {restaurant} with rating {rating}")
 
 # ---------------------------
-# PAGE 2: Edit Ratings
+# PAGE 2: Edit / Delete Ratings
 # ---------------------------
 elif page == "Edit Ratings":
-    st.title("✏️ Edit Restaurant Ratings")
+    st.title("✏️ Edit or Delete Restaurant Ratings")
+    
     if df.empty:
-        st.warning("No data available to edit.")
+        st.warning("No data available.")
     else:
         restaurant_list = df["restaurant"].unique()
-        selected_restaurant = st.selectbox("Select a restaurant to edit", restaurant_list)
+        selected_restaurant = st.selectbox("Select a restaurant", restaurant_list)
 
         if selected_restaurant:
             restaurant_data = df[df["restaurant"] == selected_restaurant].iloc[0]
@@ -84,14 +85,25 @@ elif page == "Edit Ratings":
                 new_location = st.text_input("Location", restaurant_data["location"])
                 new_cuisine = st.text_input("Cuisine", restaurant_data["cuisine"])
                 new_comments = st.text_area("Comments", restaurant_data["comments"])
-                submitted = st.form_submit_button("Save Changes")
 
-                if submitted:
-                    # Find row index in Google Sheet (1-based, including header row)
-                    row_index = df.index[df["restaurant"] == selected_restaurant][0] + 2
-                    sheet.update(f"A{row_index}:E{row_index}", [[new_name, new_rating, new_location, new_cuisine, new_comments]])
+                col1, col2 = st.columns(2)
+                save_btn = col1.form_submit_button("💾 Save Changes")
+                delete_btn = col2.form_submit_button("🗑 Delete Restaurant")
+
+                # Find row index in Google Sheet (1-based including header)
+                row_index = df.index[df["restaurant"] == selected_restaurant][0] + 2
+
+                if save_btn:
+                    sheet.update(
+                        f"A{row_index}:E{row_index}", 
+                        [[new_name, new_rating, new_location, new_cuisine, new_comments]]
+                    )
                     st.success(f"✅ Updated {new_name} successfully!")
 
+                if delete_btn:
+                    sheet.delete_row(row_index)
+                    st.success(f"🗑 Deleted {selected_restaurant} successfully!")
+                    
 # ---------------------------
 # PAGE 3: View & Visualize
 # ---------------------------
