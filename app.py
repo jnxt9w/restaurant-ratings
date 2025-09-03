@@ -21,7 +21,8 @@ else:
     service_account_info = st.secrets["gcp_service_account"]
 
 # Authenticate
-scope = ["https://www.googleapis.com/auth/spreadsheets"]
+scope = ["https://spreadsheets.google.com/feeds",
+         "https://www.googleapis.com/auth/drive"]
 creds = Credentials.from_service_account_info(service_account_info, scopes=scope)
 client = gspread.authorize(creds)
 sheet = client.open(SHEET_NAME).sheet1  # first tab
