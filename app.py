@@ -101,8 +101,20 @@ elif page == "Edit Ratings":
                     st.success(f"✅ Updated {new_name} successfully!")
 
                 if delete_btn:
-                    sheet.delete_row(row_index)
-                    st.success(f"🗑 Deleted {selected_restaurant} successfully!")
+                    # Get all rows including header
+                    all_rows = sheet.get_all_values()  # returns a list of lists
+
+                    # Find row index (0-based) in the sheet data
+                    row_index = df.index[df["restaurant"] == selected_restaurant][0] + 1  # +1 to skip header for Python list
+
+                    # Remove the row from the list
+                    all_rows.pop(row_index)
+
+                    # Clear the sheet and write back remaining rows
+                    sheet.clear()
+                    sheet.update('A1', all_rows)
+
+    st.success(f"🗑 Deleted {selected_restaurant} successfully!")
                     
 # ---------------------------
 # PAGE 3: View & Visualize
