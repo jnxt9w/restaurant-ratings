@@ -114,7 +114,7 @@ elif page == "Edit Ratings":
                     sheet.clear()
                     sheet.update('A1', all_rows)
 
-    st.success(f"🗑 Deleted {selected_restaurant} successfully!")
+                    st.success(f"🗑 Deleted {selected_restaurant} successfully!")
                     
 # ---------------------------
 # PAGE 3: View & Visualize
