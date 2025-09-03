@@ -48,36 +48,30 @@ page = st.sidebar.radio("Choose a page", ["Add Ratings", "Edit Ratings", "View &
 # ---------------------------
 if page == "Add Ratings":
     st.title("🍴 Add a New Restaurant Rating")
-    
-    # Initialize session state for form fields if not present
-    for key in ["restaurant", "rating", "location", "cuisine", "comments"]:
-        if key not in st.session_state:
-            st.session_state[key] = "" if key != "rating" else 0.0
 
-    with st.form("add_rating"):
-        restaurant = st.text_input("Restaurant name", value=st.session_state["restaurant"], key="restaurant")
-        rating = st.number_input(
-            "Rating (0-10)", 
-            min_value=0.0, max_value=10.0, step=0.1, 
-            value=st.session_state["rating"], key="rating"
-        )
-        location = st.text_input("Location", value=st.session_state["location"], key="location")
-        cuisine = st.text_input("Cuisine", value=st.session_state["cuisine"], key="cuisine")
-        comments = st.text_area("Comments (optional)", value=st.session_state["comments"], key="comments")
-        
-        submitted = st.form_submit_button("Add Rating")
-        
-        if submitted and restaurant:
-            new_row = [restaurant, rating, location, cuisine, comments]
-            sheet.append_row(new_row)
-            st.success(f"✅ Added {restaurant} with rating {rating}")
-            
-            # Reset the session state values to clear the form
-            st.session_state["restaurant"] = ""
-            st.session_state["rating"] = 0.0
-            st.session_state["location"] = ""
-            st.session_state["cuisine"] = ""
-            st.session_state["comments"] = ""
+    # Initialize session state if not already present
+    for key, default in [("restaurant", ""), ("rating", 0.0), ("location", ""), ("cuisine", ""), ("comments", "")]:
+        if key not in st.session_state:
+            st.session_state[key] = default
+
+    def submit_and_reset():
+        # Append new row to Google Sheet
+        new_row = [
+            st.session_state["restaurant"],
+            st.session_state["rating"],
+            st.session_state["location"],
+            st.session_state["cuisine"],
+            st.session_state["comments"]
+        ]
+        sheet.append_row(new_row)
+        st.success(f"✅ Added {st.session_state['restaurant']} with rating {st.session_state['rating']}")
+
+        # Reset the session state values
+        st.session_state["restaurant"] = ""
+        st.session_state["rating"] = 0.0
+        st.session_state["location"] = ""
+        st.session_state["cuisine"] = ""
+        st.session_state["comments"] = ""
 
 # ---------------------------
 # PAGE 2: Edit / Delete Ratings
