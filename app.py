@@ -48,38 +48,18 @@ page = st.sidebar.radio("Choose a page", ["Add Ratings", "Edit Ratings", "View &
 # ---------------------------
 if page == "Add Ratings":
     st.title("🍴 Add a New Restaurant Rating")
-
-    # Initialize session state
-    for key, default in [("restaurant", ""), ("rating", 0.0), ("location", ""), ("cuisine", ""), ("comments", "")]:
-        if key not in st.session_state:
-            st.session_state[key] = default
-
     with st.form("add_rating"):
-        st.text_input("Restaurant name", key="restaurant")
-        st.number_input("Rating (0-10)", min_value=0.0, max_value=10.0, step=0.1, key="rating")
-        st.text_input("Location", key="location")
-        st.text_input("Cuisine", key="cuisine")
-        st.text_area("Comments (optional)", key="comments")
+        restaurant = st.text_input("Restaurant name")
+        rating = st.number_input("Rating (0-10)", min_value=0.0, max_value=10.0, step=0.1)
+        location = st.text_input("Location")
+        cuisine = st.text_input("Cuisine")
+        comments = st.text_area("Comments (optional)")
         submitted = st.form_submit_button("Add Rating")
-
-        if submitted and st.session_state["restaurant"]:
-            new_row = [
-                st.session_state["restaurant"],
-                st.session_state["rating"],
-                st.session_state["location"],
-                st.session_state["cuisine"],
-                st.session_state["comments"]
-            ]
+        if submitted and restaurant:
+            new_row = [restaurant, rating, location, cuisine, comments]
             sheet.append_row(new_row)
-            st.success(f"✅ Added {st.session_state['restaurant']} with rating {st.session_state['rating']}")
-
-            # Reset fields manually after submit
-            st.session_state["restaurant"] = ""
-            st.session_state["rating"] = 0.0
-            st.session_state["location"] = ""
-            st.session_state["cuisine"] = ""
-            st.session_state["comments"] = ""
-            
+            st.success(f"✅ Added {restaurant} with rating {rating}")
+                  
 # ---------------------------
 # PAGE 2: Edit / Delete Ratings
 # ---------------------------
